@@ -12,7 +12,19 @@ document.addEventListener("DOMContentLoaded", function(){
         .then(function(data){
             const media = document.querySelectorAll("[data-json-src]");
 
+            function reserveMediaSpace(el){
+                if(el.tagName !== "IMG") return;
+                if(el.dataset.layoutReserved === "1") return;
+                el.dataset.layoutReserved = "1";
+                const parent = el.parentElement;
+                if(parent && !parent.style.minHeight && !parent.classList.contains("card-frame")){
+                    const rect = parent.getBoundingClientRect();
+                    if(rect.height > 20) return;
+                }
+            }
+
             function loadMedia(el){
+                reserveMediaSpace(el);
                 const key = el.getAttribute("data-json-src");
                 if(!data[key]) return;
                 if(el.tagName === "SOURCE") {
@@ -153,24 +165,17 @@ const progress =
 document.getElementById("scrollProgress");
 
 
-window.addEventListener(
-    "scroll",
-    function(){
-
-        const total =
-            document.documentElement.scrollHeight -
-            window.innerHeight;
-
-
-        const percent =
-            (window.scrollY / total) * 100;
-
-
-        progress.style.width =
-            percent + "%";
-
-    }
-);
+let progressTick = false;
+window.addEventListener("scroll", function(){
+    if(progressTick) return;
+    progressTick = true;
+    window.requestAnimationFrame(function(){
+        const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const percent = Math.max(0, Math.min(100, (window.scrollY / total) * 100));
+        if(progress) progress.style.transform = "scaleX(" + (percent / 100) + ")";
+        progressTick = false;
+    });
+}, {passive:true});
 
 
 /* =====================================================
@@ -216,9 +221,11 @@ new IntersectionObserver(
 
                 if(entry.isIntersecting){
 
-                    entry.target
-                    .classList
-                    .add("show");
+                    entry.target.classList.add("reveal-active");
+                    entry.target.classList.add("show");
+                    window.setTimeout(function(){
+                        entry.target.classList.remove("reveal-active");
+                    }, 800);
 
 
                     revealObserver
@@ -363,15 +370,10 @@ document
                             slogans[index];
 
 
-                        element.style.animation =
-                            "none";
-
-
-                        void element.offsetWidth;
-
-
-                        element.style.animation =
-                            "sloganIn .6s both";
+                        element.classList.remove("slogan-refresh");
+                        requestAnimationFrame(function(){
+                            element.classList.add("slogan-refresh");
+                        });
 
 
                     },
@@ -1470,6 +1472,10 @@ new Date().getFullYear();
         entries.forEach(function(entry){
             if(entry.isIntersecting){
                 entry.target.classList.add('is-visible');
+                entry.target.classList.add('reveal-active');
+                window.setTimeout(function(){
+                    entry.target.classList.remove('reveal-active');
+                }, 800);
                 observer.unobserve(entry.target);
             }
         });
