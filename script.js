@@ -1,59 +1,85 @@
 /* =====================================================
-   XENMARK MOBILE PERFORMANCE / SCROLL STABILITY
-   Desktop animations stay unchanged. On phones, continuous
-   animation timers are disabled so scrolling remains stable.
+   XENMARK MEDIA + MOBILE MOTION
+   Keep the visual experience on mobile. Heavy full-screen effects
+   are reduced in CSS, but functional animations/timers stay active.
 ===================================================== */
-const XENMARK_MOBILE_MODE = window.matchMedia('(max-width: 700px)').matches;
-if (XENMARK_MOBILE_MODE) {
-    window.setInterval = function () { return 0; };
-}
+document.addEventListener("DOMContentLoaded", function(){
+    fetch("data.json")
+        .then(function(response){
+            if(!response.ok) throw new Error("data.json failed: " + response.status);
+            return response.json();
+        })
+        .then(function(data){
+            const media = document.querySelectorAll("[data-json-src]");
 
-
-document.addEventListener("DOMContentLoaded", () => {
-    fetch('data.json')
-        .then(response => response.json())
-        .then(data => {
-            const media = document.querySelectorAll('[data-json-src]');
-
-            const loadMedia = (el) => {
-                const key = el.getAttribute('data-json-src');
-                if (!data[key]) return;
-                if (el.tagName === 'SOURCE') {
+            function loadMedia(el){
+                const key = el.getAttribute("data-json-src");
+                if(!data[key]) return;
+                if(el.tagName === "SOURCE") {
                     el.src = data[key];
-                    const video = el.closest('video');
-                    if (video) video.load();
+                    const video = el.closest("video");
+                    if(video) video.load();
                 } else {
                     el.src = data[key];
+                    el.decoding = "async";
                 }
-            };
+            }
 
-            // Load only what is visible first; defer the rest until near the viewport.
-            const observer = 'IntersectionObserver' in window ? new IntersectionObserver((entries, obs) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
+            const lazyObserver = "IntersectionObserver" in window ? new IntersectionObserver(function(entries, obs){
+                entries.forEach(function(entry){
+                    if(entry.isIntersecting){
                         loadMedia(entry.target);
                         obs.unobserve(entry.target);
                     }
                 });
-            }, { rootMargin: '500px 0px' }) : null;
+            }, {rootMargin:"350px 0px"}) : null;
 
-            media.forEach(el => {
-                const isHeroVideoSource = el.tagName === 'SOURCE' && el.closest('.hero-video');
-                if (isHeroVideoSource && window.innerWidth <= 700) return;
-                if (observer && el.tagName !== 'SOURCE') {
-                    observer.observe(el);
+            media.forEach(function(el){
+                const isHeroVideoSource = el.tagName === "SOURCE" && el.closest(".hero-video");
+                const isHeroImage = !!el.closest(".hero");
+
+                // Hero media is loaded immediately; other images are lazy-loaded near the viewport.
+                if(isHeroVideoSource || isHeroImage || !lazyObserver){
+                    loadMedia(el);
+                } else if(el.tagName !== "SOURCE") {
+                    lazyObserver.observe(el);
                 } else {
                     loadMedia(el);
                 }
             });
 
-            // Hero image/source gets priority.
-            const hero = document.querySelector('.hero [data-json-src]');
-            if (hero && !(hero.tagName === 'SOURCE' && window.innerWidth <= 700)) loadMedia(hero);
-        })
-        .catch(err => console.error('Error loading data.json:', err));
-});
+            const video = document.querySelector(".hero-video");
+            if(video){
+                video.muted = true;
+                video.setAttribute("muted", "");
+                video.setAttribute("playsinline", "");
+                video.setAttribute("autoplay", "");
+                video.setAttribute("loop", "");
+                video.preload = "metadata";
 
+                function tryPlay(){
+                    const p = video.play();
+                    if(p && typeof p.catch === "function") p.catch(function(){});
+                }
+                video.addEventListener("loadeddata", tryPlay, {once:true});
+                video.addEventListener("canplay", tryPlay, {once:true});
+                setTimeout(tryPlay, 700);
+
+                // If the remote video fails, use a known Coverr fallback rather than leaving a dead hero.
+                video.addEventListener("error", function(){
+                    if(video.dataset.fallbackApplied === "1") return;
+                    video.dataset.fallbackApplied = "1";
+                    const source = video.querySelector("source");
+                    if(source){
+                        source.src = "https://cdn.coverr.co/videos/coverr-overhead-view-of-the-highway-8903/1080p.mp4";
+                        video.load();
+                        tryPlay();
+                    }
+                }, {once:true});
+            }
+        })
+        .catch(function(err){ console.error("Xenmark media error:", err); });
+});
 
 /* =====================================================
    LOADER
@@ -72,7 +98,7 @@ window.addEventListener(
                 .add("hide");
 
             },
-            1400
+            2200
         );
 
     }
