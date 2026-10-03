@@ -1,16 +1,41 @@
 
 document.addEventListener("DOMContentLoaded", () => {
-    fetch('data.json')
+    fetch("data.json")
         .then(response => response.json())
         .then(data => {
-            document.querySelectorAll('[data-json-src]').forEach(el => {
-                const key = el.getAttribute('data-json-src');
-                if(data[key]) {
-                    el.src = data[key];
+            const mobile = window.matchMedia("(max-width: 768px)").matches;
+
+            document.querySelectorAll("[data-json-src]").forEach((el, index) => {
+                const key = el.getAttribute("data-json-src");
+                const url = data[key];
+
+                if (!url) return;
+
+                /* Do not download the large hero video on mobile.
+                   The poster image remains visible instead. */
+                if (el.tagName === "SOURCE" && key === "media_47" && mobile) {
+                    return;
                 }
+
+                if (el.tagName === "IMG") {
+                    const alreadyHasLoading = el.hasAttribute("loading");
+
+                    if (!alreadyHasLoading) {
+                        el.loading = index < 8 ? "eager" : "lazy";
+                    }
+
+                    el.decoding = "async";
+                    el.fetchPriority = index < 3 ? "high" : "auto";
+                }
+
+                if (el.tagName === "VIDEO" || el.tagName === "SOURCE") {
+                    el.preload = mobile ? "none" : "metadata";
+                }
+
+                el.src = url;
             });
         })
-        .catch(err => console.error('Error loading data.json:', err));
+        .catch(err => console.error("Error loading data.json:", err));
 });
 
 
