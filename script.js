@@ -1,41 +1,57 @@
+/* =====================================================
+   XENMARK MOBILE PERFORMANCE / SCROLL STABILITY
+   Desktop animations stay unchanged. On phones, continuous
+   animation timers are disabled so scrolling remains stable.
+===================================================== */
+const XENMARK_MOBILE_MODE = window.matchMedia('(max-width: 700px)').matches;
+if (XENMARK_MOBILE_MODE) {
+    window.setInterval = function () { return 0; };
+}
+
 
 document.addEventListener("DOMContentLoaded", () => {
-    fetch("data.json")
+    fetch('data.json')
         .then(response => response.json())
         .then(data => {
-            const mobile = window.matchMedia("(max-width: 768px)").matches;
+            const media = document.querySelectorAll('[data-json-src]');
 
-            document.querySelectorAll("[data-json-src]").forEach((el, index) => {
-                const key = el.getAttribute("data-json-src");
-                const url = data[key];
-
-                if (!url) return;
-
-                /* Do not download the large hero video on mobile.
-                   The poster image remains visible instead. */
-                if (el.tagName === "SOURCE" && key === "media_47" && mobile) {
-                    return;
+            const loadMedia = (el) => {
+                const key = el.getAttribute('data-json-src');
+                if (!data[key]) return;
+                if (el.tagName === 'SOURCE') {
+                    el.src = data[key];
+                    const video = el.closest('video');
+                    if (video) video.load();
+                } else {
+                    el.src = data[key];
                 }
+            };
 
-                if (el.tagName === "IMG") {
-                    const alreadyHasLoading = el.hasAttribute("loading");
-
-                    if (!alreadyHasLoading) {
-                        el.loading = index < 8 ? "eager" : "lazy";
+            // Load only what is visible first; defer the rest until near the viewport.
+            const observer = 'IntersectionObserver' in window ? new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        loadMedia(entry.target);
+                        obs.unobserve(entry.target);
                     }
+                });
+            }, { rootMargin: '500px 0px' }) : null;
 
-                    el.decoding = "async";
-                    el.fetchPriority = index < 3 ? "high" : "auto";
+            media.forEach(el => {
+                const isHeroVideoSource = el.tagName === 'SOURCE' && el.closest('.hero-video');
+                if (isHeroVideoSource && window.innerWidth <= 700) return;
+                if (observer && el.tagName !== 'SOURCE') {
+                    observer.observe(el);
+                } else {
+                    loadMedia(el);
                 }
-
-                if (el.tagName === "VIDEO" || el.tagName === "SOURCE") {
-                    el.preload = mobile ? "none" : "metadata";
-                }
-
-                el.src = url;
             });
+
+            // Hero image/source gets priority.
+            const hero = document.querySelector('.hero [data-json-src]');
+            if (hero && !(hero.tagName === 'SOURCE' && window.innerWidth <= 700)) loadMedia(hero);
         })
-        .catch(err => console.error("Error loading data.json:", err));
+        .catch(err => console.error('Error loading data.json:', err));
 });
 
 
