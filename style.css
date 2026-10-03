@@ -10065,3 +10065,119 @@ section{
         scroll-behavior:auto !important;
     }
 }
+
+
+/* =========================================================
+   DEEP MOBILE SCROLL-STABILITY FIX
+   Keep the visual motion, but prevent animations/media from
+   becoming scroll anchors or forcing expensive reflow.
+========================================================= */
+html, body {
+    overflow-anchor: none;
+}
+
+#scrollProgress {
+    transform-origin: left center;
+    will-change: transform;
+}
+
+.reveal.reveal-active,
+.scroll-reveal.reveal-active {
+    will-change: transform, opacity;
+}
+
+.dynamic-slogan {
+    min-height: 1.5em;
+}
+
+.slogan-refresh {
+    animation: sloganIn .6s both !important;
+}
+
+/* Do not let blur/clip-path be part of the frequent mobile motion. */
+@media (max-width:700px){
+    .scroll-reveal {
+        filter:none !important;
+        will-change:auto;
+    }
+    .scroll-reveal.reveal-active {
+        will-change:transform, opacity;
+    }
+    .reveal {
+        will-change:auto;
+    }
+    .reveal.reveal-active {
+        will-change:transform, opacity;
+    }
+
+    .crazy-banner-slide {
+        filter:none !important;
+        clip-path:none !important;
+        transition:opacity .55s ease, transform .75s cubic-bezier(.18,.88,.28,1), visibility 0s linear .55s !important;
+    }
+    .crazy-banner-slide.cyber-exit {
+        filter:none !important;
+        clip-path:none !important;
+        transform:scale(.97) translateX(-24px) !important;
+    }
+    .crazy-banner-slide img {
+        transition:transform 1.2s ease !important;
+    }
+
+    /* These decorative animations stay visible but use cheap opacity/transform work. */
+    .crazy-banner-beam,
+    .crazy-banner-scan {
+        will-change:transform;
+    }
+
+    /* Keep dynamic cards visually animated without changing layout. */
+    .crazy-collection-card.active {
+        transform:translate3d(0,-6px,0) rotateX(0deg);
+    }
+}
+
+/* MOBILE FOOTER PERFORMANCE FIX
+   Keep the footer layout and styling, but stop continuous footer motion on phones. */
+@media (max-width:700px){
+  .aman-footer .footer-core-ring,
+  .aman-footer .aman-footer-x,
+  .aman-footer-marquee div{
+    animation:none !important;
+  }
+
+  .aman-footer .aman-footer-marquee div{
+    transform:none !important;
+  }
+}
+
+/* MOBILE SCAN EFFECTS OFF — keep all other animations and interactions */
+@media (max-width:700px){
+  .scanlines,
+  .visual-scan,
+  .arsenal-display-scan,
+  .limited-scan,
+  .aman-footer-scan,
+  .crazy-banner-scan,
+  .crazy-collection-image-scan,
+  .xenmark-loader-scan,
+  .crazy-banner-beam,
+  .xn-scan-lines,
+  .xn-scanline,
+  .scan-beam,
+  .scan-beam-line,
+  [class*="scanline"],
+  [class*="scan-line"],
+  [class*="scanner"],
+  [class*="scan-beam"]{
+    animation:none !important;
+    transition:none !important;
+    display:none !important;
+    opacity:0 !important;
+  }
+
+  /* Also stop scan animations attached to pseudo-elements. */
+  *::before,
+  *::after{
+    animation-name:none !important;
+  }
+}
