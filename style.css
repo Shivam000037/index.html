@@ -9968,29 +9968,141 @@ section{
     }
 }
 
-/* =====================================================
-   PERFORMANCE OPTIMIZATION
-   Keeps the Xenmark design but reduces mobile GPU work.
-===================================================== */
-
-img{
-    content-visibility:auto;
+/* MOBILE PERFORMANCE: keep the visual design while reducing expensive effects. */
+@media (max-width: 700px){
+  .cursor-glow, .noise, .scanlines { display:none !important; }
+  .cyber-grid { opacity:.18; }
+  * { -webkit-tap-highlight-color: transparent; }
+  .hero-video { display:none !important; }
+  .hero { background-image: var(--hero-poster, none); }
 }
 
-@media (max-width: 768px){
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+}
 
-    /* Avoid expensive blur/backdrop rendering on small screens. */
-    .backdrop-blur,
-    [class*="glass"],
-    [class*="blur"]{
-        backdrop-filter:none;
+
+/* =====================================================
+   FINAL MOBILE PERFORMANCE MODE
+   Keep the design, remove motion that can fight touch
+   scrolling or consume GPU/CPU on phones.
+===================================================== */
+@media (max-width:700px){
+    html{
+        scroll-behavior:auto !important;
+        overflow-x:hidden !important;
+        overscroll-behavior-x:none !important;
     }
 
-    /* Let the browser prioritize the visible page. */
-    section,
-    .section,
-    .collection-section,
-    .crazy-section{
-        contain: paint;
+    body{
+        overflow-x:hidden !important;
+        overflow-anchor:auto;
+        touch-action:pan-y;
+    }
+
+    /* Stop every CSS animation/transition on mobile. */
+    *, *::before, *::after{
+        animation:none !important;
+        transition:none !important;
+        animation-delay:0s !important;
+        animation-duration:0s !important;
+        animation-iteration-count:1 !important;
+    }
+
+    /* Remove expensive full-screen effects. */
+    .cyber-grid,
+    .scanlines,
+    .vignette,
+    .noise,
+    .cursor-glow,
+    .why-xenmark-bg-grid,
+    .why-xenmark-beam,
+    .crazy-collection-grid,
+    .crazy-collection-noise,
+    .crazy-collection-ring,
+    .crazy-collection-image-scan,
+    .crazy-banner-grid,
+    .crazy-banner-scan,
+    .crazy-banner-beam{
+        display:none !important;
+    }
+
+    /* No video processing on phones. */
+    .hero-video{
+        display:none !important;
+    }
+
+    /* Scroll-reveal content must always be visible. */
+    .scroll-reveal,
+    .scroll-reveal.is-visible,
+    .reveal,
+    .reveal.active,
+    .visual-section,
+    .section-head,
+    #collection .banner,
+    .crazy-stage{
+        opacity:1 !important;
+        visibility:visible !important;
+        transform:none !important;
+        filter:none !important;
+    }
+
+    /* Disable image hover transforms on touch screens. */
+    .cyber-card:hover .card-frame img,
+    .visual-image:hover img,
+    .product:hover .product-image img,
+    .gallery-item:hover img,
+    .crazy-card:hover .crazy-image img,
+    .customizer-image:hover img,
+    .crazy-collection-card:hover .crazy-collection-image img,
+    .banner-slide.active img,
+    .crazy-banner-slide.active img{
+        transform:none !important;
+        filter:none !important;
+    }
+
+    /* Keep image boxes stable while lazy images arrive. */
+    img[data-json-src]{
+        display:block !important;
+        max-width:100%;
+    }
+
+    .card-frame,
+    .visual-image,
+    .product-image,
+    .gallery-item,
+    .crazy-image,
+    .customizer-image,
+    .crazy-collection-image{
+        contain:paint;
+    }
+
+    /* Remove expensive popup blur on mobile. */
+    .contact-popup,
+    .modal,
+    .popup{
+        backdrop-filter:none !important;
+        -webkit-backdrop-filter:none !important;
+    }
+
+    /* Fixed floating controls stay simple and don't animate. */
+    .whatsapp,
+    .whatsapp::before,
+    .whatsapp::after,
+    .top-btn{
+        animation:none !important;
+        transition:none !important;
+    }
+
+    /* The mobile loader disappears quickly; no animated loader work. */
+    .xenmark-loader,
+    .loader{
+        animation:none !important;
+        transition:none !important;
+    }
+
+    /* Avoid accidental horizontal movement from wide cyber elements. */
+    section, header, footer, main, .container{
+        max-width:100%;
     }
 }
