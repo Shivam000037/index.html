@@ -9967,3 +9967,30 @@ section{
         filter:none !important;
     }
 }
+
+/* =====================================================
+   PERFORMANCE OPTIMIZATION
+   Keeps the Xenmark design but reduces mobile GPU work.
+===================================================== */
+
+img{
+    content-visibility:auto;
+}
+
+@media (max-width: 768px){
+
+    /* Avoid expensive blur/backdrop rendering on small screens. */
+    .backdrop-blur,
+    [class*="glass"],
+    [class*="blur"]{
+        backdrop-filter:none;
+    }
+
+    /* Let the browser prioritize the visible page. */
+    section,
+    .section,
+    .collection-section,
+    .crazy-section{
+        contain: paint;
+    }
+}
